@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SaveVid V37 • Universal Downloader</title>
+  <title>SaveVid V38 • Universal Downloader</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
@@ -39,11 +39,11 @@
     <header class="flex items-center justify-between mb-6">
       <div class="flex items-baseline gap-2">
         <h1 class="text-[28px] tracking-[-0.02em] font-normal leading-none">SaveVid</h1>
-        <span class="text-[11px] px-2 py-[3px] rounded-full border border-[var(--border)] bg-black text-white dark:bg-white dark:text-black tracking-widest uppercase">V37</span>
+        <span class="text-[11px] px-2 py-[3px] rounded-full border border-[var(--border)] bg-black text-white dark:bg-white dark:text-black tracking-widest uppercase">V38</span>
       </div>
       <div class="flex items-center gap-2">
         <span class="h-2 w-2 rounded-full bg-[#00d26a] animate-pulse"></span>
-        <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Direct Mode</span>
+        <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Share Fixer</span>
       </div>
     </header>
 
@@ -53,7 +53,7 @@
         Shkarko <span class="italic">pa</span><br>watermark.
       </h2>
       <p class="text-[12px] leading-[1.5] text-[var(--muted)]">
-        TikTok, Instagram Reels & Facebook (Reels, Watch, Share).
+        TikTok, Instagram Reels & Facebook (Mbështetje totale për linqet /share/r/ dhe /share/v/).
       </p>
     </div>
 
@@ -66,7 +66,7 @@
       </div>
 
       <div class="relative">
-        <input id="urlInput" type="text" placeholder="Ngjit çdo link (FB, IG, TikTok)..." 
+        <input id="urlInput" type="text" placeholder="Ngjit çdo link (FB Share, Reels, TikTok)..." 
           class="w-full h-[54px] rounded-[12px] bg-[#f5f4ef] dark:bg-[#1e1e1e] border border-transparent focus:border-black dark:focus:border-white focus:outline-none px-4 pr-[54px] text-[13px] placeholder:text-[#b0aea8]">
         <button id="clearBtn" class="absolute right-[6px] top-[6px] bottom-[6px] w-[42px] rounded-[9px] bg-white dark:bg-black border border-[var(--border)] grid place-items-center text-[12px]">✕</button>
       </div>
@@ -80,19 +80,14 @@
     <div id="progressBox" class="hidden mt-5 border border-[var(--border)] rounded-[14px] bg-[var(--card)] p-4">
       <div class="flex items-center justify-between mb-3">
         <span class="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Progresi</span>
-        <span id="progressStatus" class="text-[10px] text-[var(--muted)] animate-pulse">Duke kërkuar...</span>
+        <span id="progressStatus" class="text-[10px] text-[var(--muted)] animate-pulse">Duke përpunuar linkun...</span>
       </div>
       <div id="stepsList" class="space-y-2"></div>
     </div>
 
     <!-- Error Box -->
     <div id="errorBox" class="hidden mt-5 rounded-[14px] border border-[#ffd1d1] bg-[#fff3f3] dark:bg-[#1f1212] dark:border-[#5a2222] p-4">
-      <p id="errorText" class="text-[12px] leading-[1.5] text-[#7a1f1f] dark:text-[#ffb3b3] mb-3"></p>
-      <div id="fbTipBox" class="hidden pt-2 border-t border-[#ffd1d1]">
-        <a id="openInBrowserBtn" href="#" target="_blank" class="block w-full py-2.5 rounded-[8px] bg-[#ff4d4d] text-white text-center text-[11px] uppercase tracking-wider font-medium">
-          Hap linkun në shfletues ↗
-        </a>
-      </div>
+      <p id="errorText" class="text-[12px] leading-[1.5] text-[#7a1f1f] dark:text-[#ffb3b3]"></p>
     </div>
 
     <!-- Result Card -->
@@ -125,8 +120,6 @@
     const progressStatus = document.getElementById('progressStatus');
     const errorBox = document.getElementById('errorBox');
     const errorText = document.getElementById('errorText');
-    const fbTipBox = document.getElementById('fbTipBox');
-    const openInBrowserBtn = document.getElementById('openInBrowserBtn');
     const resultBox = document.getElementById('resultBox');
     const videoPreview = document.getElementById('videoPreview');
     const videoTitle = document.getElementById('videoTitle');
@@ -152,7 +145,7 @@
         <div class="flex items-center justify-between text-[11px]">
           <span class="${s.status === 'pending' ? 'text-[var(--muted)]' : ''}">${s.name}</span>
           <span class="text-[10px] uppercase font-medium ${s.status === 'success' ? 'text-[#00a651]' : s.status === 'fail' ? 'text-[#ff4d4d]' : 'text-[var(--muted)]'}">
-            ${s.status === 'trying' ? 'duke provuar...' : s.status}
+            ${s.status === 'trying' ? 'duke u përpunuar...' : s.status}
           </span>
         </div>
       `).join('');
@@ -177,68 +170,86 @@
       return url;
     }
 
+    // Zgjidhësi automatik i linqeve share/r/ dhe share/v/
+    async function resolveShareLink(url) {
+      if (!url.includes('/share/r/') && !url.includes('/share/v/')) return url;
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const res = await fetchWithTimeout(proxyUrl, {}, 6000);
+        if (res.ok) {
+          const finalUrl = res.url;
+          if (finalUrl && !finalUrl.includes('/share/')) return finalUrl;
+          const html = await res.text();
+          const match = html.match(/\/reel\/(\d+)/) || html.match(/\/videos\/(\d+)/);
+          if (match && match[1]) {
+            return `https://www.facebook.com/reel/${match[1]}`;
+          }
+        }
+      } catch (e) {}
+      return url;
+    }
+
     async function processVideo(url, setStep) {
-      const isTikTok = /tiktok\.com|vm\.tiktok|vt\.tiktok/i.test(url);
+      // 1. Fillimisht zhbllokojmë linkun share nëse është Facebook
+      setStep(0, 'trying');
+      let cleanUrl = await resolveShareLink(url);
+      setStep(0, 'success');
+
+      const isTikTok = /tiktok\.com|vm\.tiktok|vt\.tiktok/i.test(cleanUrl);
 
       if (isTikTok) {
-        setStep(0, 'trying');
+        setStep(1, 'trying');
         try {
           const res = await fetchWithTimeout('https://www.tikwm.com/api/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `url=${encodeURIComponent(url)}&hd=1`
+            body: `url=${encodeURIComponent(cleanUrl)}&hd=1`
           });
           const json = await res.json();
           const mp4 = ensureVideoUrl(json?.data?.hdplay || json?.data?.play);
           if (mp4) {
-            setStep(0, 'success');
+            setStep(1, 'success');
             return { hd: mp4, title: json.data.title || 'TikTok Video', author: json.data.author?.unique_id || 'tiktok', source: 'TikWM' };
           }
         } catch (e) {
-          setStep(0, 'fail');
+          setStep(1, 'fail');
         }
       }
 
-      // Provojmë Cobalt Engine
-      setStep(isTikTok ? 1 : 0, 'trying');
+      // Provojmë Cobalt API për Facebook & IG & TikTok
+      setStep(isTikTok ? 2 : 1, 'trying');
       try {
         const res = await fetchWithTimeout('https://co.wuk.sh/api/json', {
           method: 'POST',
           headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: url, videoQuality: '1080' })
+          body: JSON.stringify({ url: cleanUrl, videoQuality: '1080' })
         });
         const json = await res.json();
         const mp4 = ensureVideoUrl(json.url || json.picker?.[0]?.url);
         if (mp4) {
-          setStep(isTikTok ? 1 : 0, 'success');
-          return { hd: mp4, title: json.filename || 'Social Video', author: 'Creator', source: 'Cobalt' };
-        }
-      } catch (e) {
-        setStep(isTikTok ? 1 : 0, 'fail');
-      }
-
-      // Provojmë Ryzen / Siputzx API
-      setStep(isTikTok ? 2 : 1, 'trying');
-      try {
-        const proxyApi = `https://api.ryzendesu.vip/api/downloader/allinone?url=${encodeURIComponent(url)}`;
-        const res = await fetchWithTimeout(proxyApi, {}, 6000);
-        const json = await res.json();
-        const mp4 = ensureVideoUrl(json?.data?.url || json?.data?.medias?.[0]?.url || json?.url);
-        if (mp4) {
           setStep(isTikTok ? 2 : 1, 'success');
-          return { hd: mp4, title: json?.data?.title || 'Social Video', author: 'Creator', source: 'Universal API' };
+          return { hd: mp4, title: json.filename || 'Social Video', author: 'Creator', source: 'Cobalt Engine' };
         }
       } catch (e) {
         setStep(isTikTok ? 2 : 1, 'fail');
       }
 
-      if (url.includes('/share/v/') || url.includes('/share/r/')) {
-        fbTipBox.classList.remove('hidden');
-        openInBrowserBtn.href = url;
-        throw new Error('Ky link "share" i Facebook është i mbyllur. Kliko butonin poshtë për ta hapur ose përdor një link Reel / Watch.');
+      // Provojmë Universal AIO API si rezervë e fundit
+      setStep(isTikTok ? 3 : 2, 'trying');
+      try {
+        const proxyApi = `https://api.ryzendesu.vip/api/downloader/allinone?url=${encodeURIComponent(cleanUrl)}`;
+        const res = await fetchWithTimeout(proxyApi, {}, 6000);
+        const json = await res.json();
+        const mp4 = ensureVideoUrl(json?.data?.url || json?.data?.medias?.[0]?.url || json?.url);
+        if (mp4) {
+          setStep(isTikTok ? 3 : 2, 'success');
+          return { hd: mp4, title: json?.data?.title || 'Social Video', author: 'Creator', source: 'Universal API' };
+        }
+      } catch (e) {
+        setStep(isTikTok ? 3 : 2, 'fail');
       }
 
-      throw new Error('Videoja nuk u gjet. Sigurohu që linku të jetë publik.');
+      throw new Error('Videoja nuk u gjet. Sigurohu që postimi në Facebook të jetë publik (Public).');
     }
 
     downloadBtn.onclick = async () => {
@@ -248,15 +259,14 @@
 
       errorBox.classList.add('hidden');
       resultBox.classList.add('hidden');
-      fbTipBox.classList.add('hidden');
       progressBox.classList.remove('hidden');
       progressStatus.textContent = 'Duke analizuar...';
       downloadBtn.disabled = true;
 
       const isTikTok = /tiktok\.com|vm\.tiktok|vt\.tiktok/i.test(url);
       const steps = isTikTok
-        ? [{ name: '1. TikWM API', status: 'pending' }, { name: '2. Cobalt Engine', status: 'pending' }, { name: '3. Universal API', status: 'pending' }]
-        : [{ name: '1. Cobalt Engine', status: 'pending' }, { name: '2. Universal API', status: 'pending' }];
+        ? [{ name: '1. Share Link Resolver', status: 'pending' }, { name: '2. TikWM API', status: 'pending' }, { name: '3. Cobalt Engine', status: 'pending' }, { name: '4. Universal API', status: 'pending' }]
+        : [{ name: '1. Share Link Resolver', status: 'pending' }, { name: '2. Cobalt Engine', status: 'pending' }, { name: '3. Universal API', status: 'pending' }];
 
       renderSteps(steps);
       const setStep = (idx, status) => {
