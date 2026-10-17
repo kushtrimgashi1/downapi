@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SaveVid V38 • Universal Downloader</title>
+  <title>SaveVid V39 • Universal Downloader</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
@@ -39,11 +39,11 @@
     <header class="flex items-center justify-between mb-6">
       <div class="flex items-baseline gap-2">
         <h1 class="text-[28px] tracking-[-0.02em] font-normal leading-none">SaveVid</h1>
-        <span class="text-[11px] px-2 py-[3px] rounded-full border border-[var(--border)] bg-black text-white dark:bg-white dark:text-black tracking-widest uppercase">V38</span>
+        <span class="text-[11px] px-2 py-[3px] rounded-full border border-[var(--border)] bg-black text-white dark:bg-white dark:text-black tracking-widest uppercase">V39</span>
       </div>
       <div class="flex items-center gap-2">
         <span class="h-2 w-2 rounded-full bg-[#00d26a] animate-pulse"></span>
-        <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Share Fixer</span>
+        <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Pro Engine</span>
       </div>
     </header>
 
@@ -53,7 +53,7 @@
         Shkarko <span class="italic">pa</span><br>watermark.
       </h2>
       <p class="text-[12px] leading-[1.5] text-[var(--muted)]">
-        TikTok, Instagram Reels & Facebook (Mbështetje totale për linqet /share/r/ dhe /share/v/).
+        TikTok, Instagram Reels & Facebook (Mbështetje totale për share/r/ dhe share/v/).
       </p>
     </div>
 
@@ -66,7 +66,7 @@
       </div>
 
       <div class="relative">
-        <input id="urlInput" type="text" placeholder="Ngjit çdo link (FB Share, Reels, TikTok)..." 
+        <input id="urlInput" type="text" placeholder="Ngjit çdo link (FB, IG, TikTok)..." 
           class="w-full h-[54px] rounded-[12px] bg-[#f5f4ef] dark:bg-[#1e1e1e] border border-transparent focus:border-black dark:focus:border-white focus:outline-none px-4 pr-[54px] text-[13px] placeholder:text-[#b0aea8]">
         <button id="clearBtn" class="absolute right-[6px] top-[6px] bottom-[6px] w-[42px] rounded-[9px] bg-white dark:bg-black border border-[var(--border)] grid place-items-center text-[12px]">✕</button>
       </div>
@@ -80,7 +80,7 @@
     <div id="progressBox" class="hidden mt-5 border border-[var(--border)] rounded-[14px] bg-[var(--card)] p-4">
       <div class="flex items-center justify-between mb-3">
         <span class="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Progresi</span>
-        <span id="progressStatus" class="text-[10px] text-[var(--muted)] animate-pulse">Duke përpunuar linkun...</span>
+        <span id="progressStatus" class="text-[10px] text-[var(--muted)] animate-pulse">Duke përpunuar...</span>
       </div>
       <div id="stepsList" class="space-y-2"></div>
     </div>
@@ -170,7 +170,6 @@
       return url;
     }
 
-    // Zgjidhësi automatik i linqeve share/r/ dhe share/v/
     async function resolveShareLink(url) {
       if (!url.includes('/share/r/') && !url.includes('/share/v/')) return url;
       try {
@@ -190,7 +189,6 @@
     }
 
     async function processVideo(url, setStep) {
-      // 1. Fillimisht zhbllokojmë linkun share nëse është Facebook
       setStep(0, 'trying');
       let cleanUrl = await resolveShareLink(url);
       setStep(0, 'success');
@@ -216,8 +214,38 @@
         }
       }
 
-      // Provojmë Cobalt API për Facebook & IG & TikTok
+      // Provojmë Siputzx FBDL / AIO (Më i fuqishmi për Facebook & IG)
       setStep(isTikTok ? 2 : 1, 'trying');
+      try {
+        const api = `https://api.siputzx.my.id/api/d/facebook?url=${encodeURIComponent(cleanUrl)}`;
+        const res = await fetchWithTimeout(api, {}, 6000);
+        const json = await res.json();
+        const mp4 = ensureVideoUrl(json?.data?.url || json?.url);
+        if (mp4) {
+          setStep(isTikTok ? 2 : 1, 'success');
+          return { hd: mp4, title: json?.data?.title || 'Facebook Video', author: 'Facebook', source: 'Siputzx FB' };
+        }
+      } catch (e) {
+        setStep(isTikTok ? 2 : 1, 'fail');
+      }
+
+      // Provojmë Ryzen FBDL API
+      setStep(isTikTok ? 3 : 2, 'trying');
+      try {
+        const api = `https://api.ryzendesu.vip/api/downloader/fbdl?url=${encodeURIComponent(cleanUrl)}`;
+        const res = await fetchWithTimeout(api, {}, 6000);
+        const json = await res.json();
+        const mp4 = ensureVideoUrl(json?.data?.[0]?.url || json?.url);
+        if (mp4) {
+          setStep(isTikTok ? 3 : 2, 'success');
+          return { hd: mp4, title: 'Facebook Video', author: 'Facebook', source: 'Ryzen FBDL' };
+        }
+      } catch (e) {
+        setStep(isTikTok ? 3 : 2, 'fail');
+      }
+
+      // Provojmë Cobalt Engine si rezervë
+      setStep(isTikTok ? 4 : 3, 'trying');
       try {
         const res = await fetchWithTimeout('https://co.wuk.sh/api/json', {
           method: 'POST',
@@ -227,26 +255,11 @@
         const json = await res.json();
         const mp4 = ensureVideoUrl(json.url || json.picker?.[0]?.url);
         if (mp4) {
-          setStep(isTikTok ? 2 : 1, 'success');
+          setStep(isTikTok ? 4 : 3, 'success');
           return { hd: mp4, title: json.filename || 'Social Video', author: 'Creator', source: 'Cobalt Engine' };
         }
       } catch (e) {
-        setStep(isTikTok ? 2 : 1, 'fail');
-      }
-
-      // Provojmë Universal AIO API si rezervë e fundit
-      setStep(isTikTok ? 3 : 2, 'trying');
-      try {
-        const proxyApi = `https://api.ryzendesu.vip/api/downloader/allinone?url=${encodeURIComponent(cleanUrl)}`;
-        const res = await fetchWithTimeout(proxyApi, {}, 6000);
-        const json = await res.json();
-        const mp4 = ensureVideoUrl(json?.data?.url || json?.data?.medias?.[0]?.url || json?.url);
-        if (mp4) {
-          setStep(isTikTok ? 3 : 2, 'success');
-          return { hd: mp4, title: json?.data?.title || 'Social Video', author: 'Creator', source: 'Universal API' };
-        }
-      } catch (e) {
-        setStep(isTikTok ? 3 : 2, 'fail');
+        setStep(isTikTok ? 4 : 3, 'fail');
       }
 
       throw new Error('Videoja nuk u gjet. Sigurohu që postimi në Facebook të jetë publik (Public).');
@@ -265,8 +278,19 @@
 
       const isTikTok = /tiktok\.com|vm\.tiktok|vt\.tiktok/i.test(url);
       const steps = isTikTok
-        ? [{ name: '1. Share Link Resolver', status: 'pending' }, { name: '2. TikWM API', status: 'pending' }, { name: '3. Cobalt Engine', status: 'pending' }, { name: '4. Universal API', status: 'pending' }]
-        : [{ name: '1. Share Link Resolver', status: 'pending' }, { name: '2. Cobalt Engine', status: 'pending' }, { name: '3. Universal API', status: 'pending' }];
+        ? [
+            { name: '1. Share Link Resolver', status: 'pending' },
+            { name: '2. TikWM API', status: 'pending' },
+            { name: '3. Siputzx FB Engine', status: 'pending' },
+            { name: '4. Ryzen FBDL', status: 'pending' },
+            { name: '5. Cobalt Engine', status: 'pending' }
+          ]
+        : [
+            { name: '1. Share Link Resolver', status: 'pending' },
+            { name: '2. Siputzx FB Engine', status: 'pending' },
+            { name: '3. Ryzen FBDL', status: 'pending' },
+            { name: '4. Cobalt Engine', status: 'pending' }
+          ];
 
       renderSteps(steps);
       const setStep = (idx, status) => {
@@ -285,7 +309,7 @@
       } catch (err) {
         progressStatus.textContent = 'Gabim';
         errorText.textContent = err.message;
-        errorBox.classList.remove('hidden');
+        errorBox.classList.add('hidden');
       } finally {
         downloadBtn.disabled = false;
       }
