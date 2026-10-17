@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SaveVid V41 • Universal Downloader</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#fcfcf9;--fg:#0a0a0a;--muted:#6b6b6b;--border:#e8e6e1;--card:#ffffff; }
+    @media(prefers-color-scheme:dark){:root{--bg:#0e0e0e;--fg:#f5f5f0;--muted:#9a9a9a;--border:#232323;--card:#161616;}}
+    body{font-family:"Fragment Mono",monospace;background:var(--bg);color:var(--fg);margin:0;}
+    h1,h2,.serif{font-family:"Instrument Serif",serif;}
+  </style>
+</head>
+<body class="min-h-screen">
+<div class="w-full max-w-[520px] mx-auto min-h-screen flex flex-col px-5 pb-10 pt-6">
+
+  <header class="flex items-center justify-between mb-6">
+    <div class="flex items-baseline gap-2">
+      <h1 class="text-[28px] tracking-[-0.02em] font-normal leading-none">SaveVid</h1>
+      <span class="text-[11px] px-2 py-[3px] rounded-full border border-[var(--border)] bg-black text-white tracking-widest uppercase">V41</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-2 w-2 rounded-full bg-[#00d26a] animate-pulse"></span>
+      <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Pro Engine</span>
+    </div>
+  </header>
+
+  <div class="mb-6">
+    <h2 class="serif text-[40px] leading-[0.95] tracking-[-0.03em] mb-2">Shkarko <span class="italic">pa</span><br>watermark.</h2>
+    <p class="text-[12px] leading-[1.5] text-[var(--muted)]">TikTok, Instagram Reels & Facebook — share/r/ dhe share/v/ mbështetur.</p>
+  </div>
+
+  <div class="bg-[var(--card)] border border-[var(--border)] rounded-[18px] p-[14px] shadow-[0_10px_30px_-18px_rgba(0,0,0,0.3)]">
+    <div class="flex items-center gap-2 mb-3 px-1">
+      <span class="text-[10px] uppercase tracking-widest text-[var(--muted)]">Linku i Videos</span>
+      <div class="h-px flex-1 bg-[var(--border)]"></div>
+      <button id="pasteBtn" class="text-[10px] uppercase tracking-widest underline underline-offset-4 hover:opacity-60">Ngjit (Paste)</button>
+    </div>
+    <div class="relative">
+      <input id="urlInput" type="text" placeholder="Ngjit çdo link (FB, IG, TikTok)..."
+        class="w-full h-[54px] rounded-[12px] bg-[#f5f4ef] border border-transparent focus:border-black focus:outline-none px-4 pr-[54px] text-[13px] placeholder:text-[#b0aea8]">
+      <button id="clearBtn" class="absolute right-[6px] top-[6px] bottom-[6px] w-[42px] rounded-[9px] bg-white border border-[var(--border)] grid place-items-center text-[12px]">✕</button>
+    </div>
+    <button id="downloadBtn" class="mt-3 w-full h-[52px] rounded-[12px] bg-[var(--fg)] text-[var(--bg)] text-[13px] uppercase tracking-[0.16em] font-medium hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center">
+      <span id="btnLabel">Shkarko</span>
+    </button>
+  </div>
+
+  <div id="progressBox" class="hidden mt-5 border border-[var(--border)] rounded-[14px] bg-[var(--card)] p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Progresi</span>
+      <span id="progressStatus" class="text-[10px] text-[var(--muted)] animate-pulse">Duke përpunuar...</span>
+    </div>
+    <div id="stepsList" class="space-y-2"></div>
+  </div>
+
+  <div id="errorBox" class="hidden mt-5 rounded-[14px] border border-[#ffd1d1] bg-[#fff3f3] p-4">
+    <p class="text-[11px] uppercase tracking-widest text-[#7a1f1f] mb-1">Gabim</p>
+    <p id="errorText" class="text-[12px] leading-[1.5] text-[#7a1f1f]"></p>
+    <p class="text-[11px] mt-2 text-[#7a1f1f] opacity-70">Sigurohu që videoja të jetë <strong>Public</strong> dhe provo sërish.</p>
+  </div>
+
+  <div id="resultBox" class="hidden mt-5 rounded-[18px] border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-[0_20px_50px_-24px_rgba(0,0,0,0.4)]">
+    <div class="relative bg-black aspect-[9/12] max-h-[480px] overflow-hidden">
+      <video id="videoPreview" controls playsinline class="w-full h-full object-contain"></video>
+      <div class="absolute top-3 left-3">
+        <span id="platformBadge" class="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full bg-white text-black font-medium">MP4</span>
+      </div>
+      <div class="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+        <p id="videoTitle" class="text-white text-[13px] leading-[1.3] line-clamp-2"></p>
+        <p id="videoAuthor" class="text-white/60 text-[11px] mt-1"></p>
+      </div>
+    </div>
+    <div class="p-4 grid grid-cols-2 gap-3">
+      <button id="dlHdBtn" class="h-[48px] rounded-[12px] bg-black text-white grid place-items-center text-[12px] uppercase tracking-[0.12em] font-medium">Shkarko MP4</button>
+      <button id="openDirectBtn" class="h-[48px] rounded-[12px] border border-[var(--border)] bg-[#f7f7f5] grid place-items-center text-[12px] uppercase tracking-[0.12em] font-medium">Hap Video ↗</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let videoData = null;
+
+$('pasteBtn').onclick = async () => { try { $('urlInput').value = await navigator.clipboard.readText(); } catch(e){ $('urlInput').focus(); } };
+$('clearBtn').onclick = () => { $('urlInput').value=''; ['errorBox','resultBox','progressBox'].forEach(id=>$(id).classList.add('hidden')); };
+
+// ── Steps renderer ──────────────────────────────────────────────────────────
+let steps = [];
+function setStep(i, status){ if(steps[i]) { steps[i].status=status; renderSteps(); } }
+function renderSteps(){
+  $('stepsList').innerHTML = steps.map(s=>`
+    <div class="flex items-center justify-between text-[11px]">
+      <span class="${s.status==='pending'?'opacity-40':''}">${s.name}</span>
+      <span class="text-[10px] uppercase font-medium ${
+        s.status==='success'?'text-[#00a651]':s.status==='fail'?'text-[#ff4d4d]':s.status==='trying'?'text-yellow-500':'opacity-30'
+      }">${s.status==='trying'?'duke provuar…':s.status==='success'?'✓ gjetur':s.status==='fail'?'✗':' —'}</span>
+    </div>`).join('');
+}
+
+// ── Fetch helper ─────────────────────────────────────────────────────────────
+async function ft(url, opts={}, ms=9000){
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms);
+  try{ const r=await fetch(url,{...opts,signal:c.signal}); clearTimeout(t); return r; }
+  catch(e){ clearTimeout(t); throw e; }
+}
+function validMp4(u){ return u && typeof u==='string' && u.startsWith('http') && !/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(u); }
+
+// ── API 1 — TikWM  (TikTok only) ────────────────────────────────────────────
+async function tikwm(url){
+  const r=await ft('https://www.tikwm.com/api/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`url=${encodeURIComponent(url)}&hd=1`});
+  const j=await r.json();
+  const mp4=j?.data?.hdplay||j?.data?.play;
+  if(validMp4(mp4)) return {hd:mp4,title:j.data.title||'TikTok Video',author:j.data.author?.unique_id||'tiktok',src:'TikWM'};
+  throw 0;
+}
+
+// ── API 2 — SSSTik  (TikTok) ─────────────────────────────────────────────────
+async function ssstik(url){
+  const r=await ft('https://ssstik.io/abc?url=dl',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','HX-Request':'true'},body:`id=${encodeURIComponent(url)}&locale=en&tt=`});
+  const html=await r.text();
+  const m=html.match(/href="(https:\/\/[^"]+\.mp4[^"]*)"/);
+  if(m&&validMp4(m[1])) return {hd:m[1],title:'TikTok Video',author:'',src:'SSSTik'};
+  throw 0;
+}
+
+// ── API 3 — fbdown.net  (Facebook) ───────────────────────────────────────────
+async function fbdown(url){
+  const form=new URLSearchParams({q:url});
+  const r=await ft('https://fbdown.net/download.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form.toString()});
+  const html=await r.text();
+  const m=html.match(/href="([^"]+)"[^>]*>.*?HD/i)||html.match(/href="([^"]+\.mp4[^"]*)"/);
+  if(m&&validMp4(m[1])) return {hd:decodeURIComponent(m[1]),title:'Facebook Video',author:'',src:'FBDown'};
+  throw 0;
+}
+
+// ── API 4 — getfvid  (Facebook) ──────────────────────────────────────────────
+async function getfvid(url){
+  const r=await ft(`https://getfvid.com/downloader?url=${encodeURIComponent(url)}`);
+  const html=await r.text();
+  const m=html.match(/href="([^"]+)"[^>]*>[^<]*(?:HD|Download)/i);
+  if(m&&validMp4(m[1])) return {hd:m[1],title:'Facebook Video',author:'',src:'GetFVid'};
+  throw 0;
+}
+
+// ── API 5 — y2mate style via allorigins  (universal) ────────────────────────
+async function y2mate(url){
+  const api=`https://api.allorigins.win/raw?url=${encodeURIComponent('https://www.y2mate.com/mates/analyzeV2/ajax')}`;
+  const r=await ft(api,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`k_query=${encodeURIComponent(url)}&k_page=home&hl=en&q_auto=0`},10000);
+  const j=await r.json();
+  const links=j?.links?.mp4||{};
+  const best=Object.values(links).sort((a,b)=>(parseInt(b.q)||0)-(parseInt(a.q)||0))[0];
+  if(best?.url&&validMp4(best.url)) return {hd:best.url,title:j.title||'Video',author:'',src:'Y2Mate'};
+  throw 0;
+}
+
+// ── API 6 — SnapSave  (Facebook/IG) via allorigins ──────────────────────────
+async function snapsave(url){
+  const proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent('https://snapsave.app/action.php')}`;
+  const r=await ft(proxy,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`url=${encodeURIComponent(url)}`},10000);
+  const html=await r.text();
+  const m=html.match(/href="(https:\/\/[^"]+)"[^>]*>\s*(?:Download|HD|MP4)/i);
+  if(m&&validMp4(m[1])) return {hd:m[1],title:'Video',author:'',src:'SnapSave'};
+  throw 0;
+}
+
+// ── API 7 — Cobalt  (rezervë universale) ─────────────────────────────────────
+async function cobalt(url){
+  const r=await ft('https://co.wuk.sh/api/json',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({url,videoQuality:'1080'})});
+  const j=await r.json();
+  const mp4=j?.url||j?.picker?.[0]?.url;
+  if(validMp4(mp4)) return {hd:mp4,title:j.filename||'Video',author:'',src:'Cobalt'};
+  throw 0;
+}
+
+// ── Share-link resolver ───────────────────────────────────────────────────────
+async function resolveShare(url, stepIdx){
+  setStep(stepIdx,'trying');
+  try{
+    const proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const r=await ft(proxy,{},8000);
+    const html=await r.text();
+    const m=html.match(/\/reel\/(\d+)/)||html.match(/\/videos\/(\d+)/)||html.match(/\/watch\/\?v=(\d+)/);
+    if(m) { setStep(stepIdx,'success'); return `https://www.facebook.com/reel/${m[1]}`; }
+    // fallback: provo redirect URL
+    const loc=html.match(/<meta[^>]+content="(https:\/\/www\.facebook\.com\/[^"]+)"/);
+    if(loc) { setStep(stepIdx,'success'); return loc[1]; }
+  }catch(e){}
+  setStep(stepIdx,'fail');
+  return url; // vazhdo me URL origjinal
+}
+
+// ── Main processor ────────────────────────────────────────────────────────────
+async function processVideo(rawUrl){
+  const isTT=/tiktok\.com|vm\.tiktok|vt\.tiktok/i.test(rawUrl);
+  const isFB=/facebook\.com|fb\.watch|fb\.com/i.test(rawUrl);
+  const isIG=/instagram\.com/i.test(rawUrl);
+  const needsResolve=isFB&&(rawUrl.includes('/share/')||rawUrl.includes('fb.watch')||rawUrl.includes('?s='));
+
+  // Ndërtoj listën e hapave
+  steps=[];
+  if(needsResolve) steps.push({name:'Share Link Resolver',status:'pending'});
+
+  if(isTT){
+    steps.push({name:'TikWM API',status:'pending'});
+    steps.push({name:'SSSTik API',status:'pending'});
+  }
+  if(isFB){
+    steps.push({name:'FBDown Engine',status:'pending'});
+    steps.push({name:'GetFVid Engine',status:'pending'});
+    steps.push({name:'SnapSave Engine',status:'pending'});
+  }
+  if(isIG){
+    steps.push({name:'SnapSave Engine',status:'pending'});
+  }
+  steps.push({name:'Cobalt (rezervë)',status:'pending'});
+  renderSteps();
+
+  let url=rawUrl;
+  let si=0; // step index
+
+  // Resolve share link
+  if(needsResolve){ url=await resolveShare(rawUrl,si); si++; }
+
+  // Provo API-të sipas platformës
+  const apis=[];
+  if(isTT) apis.push(tikwm,ssstik);
+  if(isFB) apis.push(fbdown,getfvid,snapsave);
+  if(isIG) apis.push(snapsave);
+  apis.push(cobalt);
+
+  for(const fn of apis){
+    setStep(si,'trying');
+    try{
+      const res=await fn(url);
+      setStep(si,'success');
+      return res;
+    }catch(e){
+      setStep(si,'fail');
+    }
+    si++;
+  }
+  throw new Error('Asnjë burim nuk funksionoi. Provo: 1) hap linkun në browser, 2) kopjo URL-in e plotë, 3) sigurohu që videoja është Public.');
+}
+
+// ── Download button ───────────────────────────────────────────────────────────
+$('downloadBtn').onclick = async ()=>{
+  let url=$('urlInput').value.trim();
+  if(!url) return;
+  if(!url.startsWith('http')) url='https://'+url;
+
+  $('errorBox').classList.add('hidden');
+  $('resultBox').classList.add('hidden');
+  $('progressBox').classList.remove('hidden');
+  $('progressStatus').textContent='Duke analizuar...';
+  $('downloadBtn').disabled=true;
+  $('btnLabel').textContent='Duke punuar...';
+
+  try{
+    const data=await processVideo(url);
+    videoData=data;
+    $('progressStatus').textContent='✓ U gjet!';
+    $('videoPreview').src=data.hd;
+    $('videoTitle').textContent=data.title;
+    $('videoAuthor').textContent=(data.author?`@${data.author} • `:'')+data.src;
+    const isTT=/tiktok/i.test(url), isIG=/instagram/i.test(url);
+    $('platformBadge').textContent=isTT?'TIKTOK':isIG?'INSTAGRAM':'FACEBOOK';
+    $('resultBox').classList.remove('hidden');
+  }catch(err){
+    $('progressStatus').textContent='Dështoi';
+    $('errorText').textContent=err.message;
+    $('errorBox').classList.remove('hidden');
+  }finally{
+    $('downloadBtn').disabled=false;
+    $('btnLabel').textContent='Shkarko';
+  }
+};
+
+// ── Download file ─────────────────────────────────────────────────────────────
+$('dlHdBtn').onclick = async ()=>{
+  if(!videoData?.hd) return;
+  $('dlHdBtn').textContent='Duke shkarkuar...';
+  try{
+    const r=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(videoData.hd)}`);
+    if(!r.ok) throw 0;
+    const blob=await r.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`savevid_${Date.now()}.mp4`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    $('dlHdBtn').textContent='✓ U Shkarkua!';
+    setTimeout(()=>{ $('dlHdBtn').textContent='Shkarko MP4'; },3000);
+  }catch(e){
+    window.open(videoData.hd,'_blank');
+    $('dlHdBtn').textContent='Shkarko MP4';
+  }
+};
+
+$('openDirectBtn').onclick = ()=>{ if(videoData?.hd) window.open(videoData.hd,'_blank'); };
+</script>
+</body>
+</html>
